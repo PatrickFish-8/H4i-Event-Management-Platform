@@ -6,27 +6,38 @@ import Tasks from "../task/Tasks";
 import "./Sidebar.css";
 
 const Sidebar = ({ selectedEvent, closeSidebar }) => {
+  // Local copy of the event including tasks.
+  const [eventData, setEventData] = useState(selectedEvent);
+  // State for logistics.
   const [predictedBudget, setPredictedBudget] = useState("");
   const [actualSpent, setActualSpent] = useState("");
   const [attendance, setAttendance] = useState("");
-  const [net, setNet] = useState(predictedBudget - actualSpent);
+  const [net, setNet] = useState(0);
 
-  // When the selectedEvent changes, update the state values
+  // When selectedEvent changes, update local event data and logistics fields.
   useEffect(() => {
     if (selectedEvent) {
-      setPredictedBudget(selectedEvent.budget.predicted || "");
-      setActualSpent(selectedEvent.budget.actual || "");
-      setAttendance(selectedEvent.attendance || "");
+      setEventData(selectedEvent);
+      setPredictedBudget(selectedEvent.budget.predicted);
+      setActualSpent(selectedEvent.budget.actual);
+      setAttendance(selectedEvent.attendance);
     }
   }, [selectedEvent]);
 
-  // calls updateEvent when the predictedBudget, actualSpent, or attendance changes
+  // Update net when budget values change.
   useEffect(() => {
-    if (selectedEvent) {
+    setNet(predictedBudget - actualSpent);
+  }, [predictedBudget, actualSpent]);
+
+  // Update the event on logistics changes.
+  useEffect(() => {
+    if (eventData) {
       updateEvent();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [predictedBudget, actualSpent, attendance]);
 
+  // Function to update the event on the backend.
   const updateEvent = async () => {
     console.log('updating event');
     try { 
@@ -36,7 +47,7 @@ const Sidebar = ({ selectedEvent, closeSidebar }) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          _id: selectedEvent._id,
+          _id: eventData._id,
           budget: {
             predicted: predictedBudget,
             actual: actualSpent,
@@ -49,7 +60,7 @@ const Sidebar = ({ selectedEvent, closeSidebar }) => {
       }
       const data = await response.json();
     } catch (error) {
-      console.error('Error fetching events:', error);
+      console.error("Error updating event:", error);
     }
   }
 
@@ -89,26 +100,37 @@ const Sidebar = ({ selectedEvent, closeSidebar }) => {
   }, [predictedBudget, actualSpent]);
 
 
+  // Callback to update the status of a specific task.
+  const handleTaskStatusChange = (taskId, newStatus) => {
+    const updatedTasks = eventData.tasks.map((task) =>
+      task._id === taskId ? { ...task, status: newStatus } : task
+    );
+    setEventData({ ...eventData, tasks: updatedTasks });
+  };
 
   return (
     <div className={`home_sidebarContainer ${selectedEvent ? "open" : ""}`}>
       <IconButton id="iconButton" onClick={closeSidebar}>
         <CloseIcon id="closeButton" />
       </IconButton>
-      {selectedEvent && (
+      {eventData && (
         <div className="sidebar_content">
-          <h1 className="sidebar_title">{selectedEvent.title}</h1>
+          <h1 className="sidebar_title">{eventData.title}</h1>
           <h2 className="sidebar_subtitle">
-            {selectedEvent.date} {selectedEvent.time.start}-{selectedEvent.time.end}
+            {eventData.date} {eventData.time.start}-{eventData.time.end}
             <IconButton id="iconButton" onClick={sendInvite}>
               <EventOutlinedIcon id="calendarButton"/>
             </IconButton>
           </h2>
-          <h2 className="sidebar_subtitle">{selectedEvent.location}</h2>
-          <p>{selectedEvent.description}</p>
+          <h2 className="sidebar_subtitle">{eventData.location}</h2>
+          <p>{eventData.description}</p>
           <div className="sidebar_tasks">
-            {selectedEvent.tasks.map((task) => (
-              <Tasks key={task._id} task={task} />
+            {eventData.tasks.map((task) => (
+              <Tasks
+                key={task._id}
+                task={task}
+                onStatusChange={handleTaskStatusChange}
+              />
             ))}
           </div>
           <div className="sidebar_budget">
@@ -119,7 +141,9 @@ const Sidebar = ({ selectedEvent, closeSidebar }) => {
                 id="predictedBudget"
                 type="number"
                 value={predictedBudget}
-                onChange={(e) => setPredictedBudget(e.target.value)}
+                onChange={(e) =>
+                  setPredictedBudget(Number(e.target.value))
+                }
               />
             </div>
             <div className="budget_item">
@@ -128,13 +152,14 @@ const Sidebar = ({ selectedEvent, closeSidebar }) => {
                 id="actualSpent"
                 type="number"
                 value={actualSpent}
-                onChange={(e) => setActualSpent(e.target.value)}
+                onChange={(e) =>
+                  setActualSpent(Number(e.target.value))
+                }
               />
             </div>
             <div className="budget_item">
-              <label htmlFor="attendance">Net </label>
-              <p className='budget_net'
-                style={{ color: net < 0 ? "red" : "green" }}>
+              <label htmlFor="net">Net </label>
+              <p className="budget_net" style={{ color: net < 0 ? "red" : "green" }}>
                 {net}
               </p>
             </div>
@@ -143,14 +168,16 @@ const Sidebar = ({ selectedEvent, closeSidebar }) => {
               <input
                 id="attendance"
                 type="number"
-                value={selectedEvent.attendance}
-                onChange={(e) => setAttendance(e.target.value)}
+                value={attendance}
+                onChange={(e) =>
+                  setAttendance(Number(e.target.value))
+                }
               />
             </div>
           </div>
           <div className="sidebar_links">
             <h2 className="sidebar_subtitle">Files</h2>
-            {selectedEvent.links.map((link, index) => (
+            {eventData.links.map((link, index) => (
               <a key={index} href={link} target="_blank" rel="noreferrer">
                 {link}
               </a>
