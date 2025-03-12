@@ -46,17 +46,34 @@ app.get('/events', async (req, res) => {
 app.post('/updateEvent', async (req, res) => {
   try {
     const event = await Event.findById(req.body._id);
+    console.log(event);
+
+    // Update title, location, and description.
+    event.title = req.body.title;
+    event.location = req.body.location;
+    event.description = req.body.description;
+
+    // Update logistics fields.
     event.budget.predicted = req.body.budget.predicted;
     event.budget.actual = req.body.budget.actual;
     event.attendance = req.body.attendance;
+
+    // Update date if provided (convert to Date if needed).
+    if (req.body.date) {
+      event.date = req.body.date;
+    }
+    // Update time if provided.
+    if (req.body.time) {
+      event.time.start = req.body.time.start;
+      event.time.end = req.body.time.end;
+    }
+
     await event.save();
     res.status(200).send(event);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-})
-
-<<<<<<< HEAD
+});
 
 // TODO: send user email confirmation before adding to calendar
 // TODO: display text telling user that event was added to calendar
@@ -126,8 +143,8 @@ app.post('/sendInvite', async (req, res) => {
   } catch (error) {
     console.error(error);
   }
-})
-=======
+});
+
 app.post('/updateTaskStatus', async (req, res) => {
   const { taskId, newStatus } = req.body;
   try {
@@ -149,8 +166,6 @@ app.post('/updateTaskStatus', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
->>>>>>> 972519b (connected task status and progress bar)
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
