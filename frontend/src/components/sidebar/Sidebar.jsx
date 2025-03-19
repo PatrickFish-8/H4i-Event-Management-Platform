@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { IconButton } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import EventOutlinedIcon from '@mui/icons-material/EventOutlined';
+import "./Sidebar.css";
 import Tasks from "../task/Tasks";
 import "./Sidebar.css";
 import TextareaAutosize from "react-textarea-autosize";
@@ -91,9 +92,8 @@ const Sidebar = ({ selectedEvent, closeSidebar, onUpdateEvent }) => {
 
   // Function to update the event on the backend.
   const updateEvent = async () => {
-    console.log('updating event');
     try { 
-      const response = await fetch("http://localhost:3000/updateEvent", {
+          const response = await fetch("http://localhost:3000/updateEvent", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -324,10 +324,43 @@ const Sidebar = ({ selectedEvent, closeSidebar, onUpdateEvent }) => {
     }
   };
 
+  const sendInvite = async () => {
+    try {
+      console.log("sending invite");
+      const response = await fetch ("http://localhost:3000/sendInvite", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          'summary': selectedEvent.title,
+          'location': selectedEvent.location,
+          'description': selectedEvent.description,
+          'start': {
+            'dateTime': `${selectedEvent.date}T${selectedEvent.time.start}:00-05:00`,
+            'timeZone': 'America/New_York'
+          },
+          'end': {
+            'dateTime': `${selectedEvent.date}T${selectedEvent.time.end}:00-05:00`,
+            'timeZone': 'America/New_York'
+          },
+        })
+      });
+      if (!response.ok) {
+        throw new Error("Failed to send calendar invite");
+      }
+    } catch (error) {
+      console.log('Error sending invite:', error);
+    }
+  }
+
   return (
     <div className={`home_sidebarContainer ${selectedEvent ? "open" : ""}`}>
       <IconButton id="closeIcon" onClick={closeSidebar}>
         <CloseIcon id="closeButton" />
+      </IconButton>
+      <IconButton id="iconButton" onClick={sendInvite}>
+        <EventOutlinedIcon id="calendarButton"/>
       </IconButton>
       {eventData && (
         <div className="sidebar_content">
