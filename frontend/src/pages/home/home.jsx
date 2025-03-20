@@ -68,17 +68,12 @@ const Home = () => {
         </div>
         <div className='home_emptyDiv'></div>
       </div>
-<<<<<<< HEAD
-      
-      <Sidebar selectedEvent={selectedEvent} closeSidebar={closeSidebar}/>
-=======
 
       <Sidebar
         selectedEvent={selectedEvent}
         closeSidebar={closeSidebar}
         onUpdateEvent={handleUpdateEvent}
       />
->>>>>>> 972519b (connected task status and progress bar)
     </>
   );
 };
